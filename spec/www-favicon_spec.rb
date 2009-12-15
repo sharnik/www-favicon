@@ -47,6 +47,15 @@ describe WWW::Favicon do
       @favicon.should_not_receive(:request)
       @favicon.find_from_html('<html></html>', 'http://www.example.com/').should == 'http://www.example.com/favicon.ico'
     end
+    
+    it "should find from default path a .jpeg file" do
+      @favicon.should_receive(:valid_favicon_url?).with('http://www.example.com/favicon.ico').and_return(false)
+      @favicon.should_receive(:valid_favicon_url?).with('http://www.example.com/favicon.png').and_return(false)
+      @favicon.should_receive(:valid_favicon_url?).with('http://www.example.com/favicon.gif').and_return(false)
+      @favicon.should_receive(:valid_favicon_url?).with('http://www.example.com/favicon.jpg').and_return(false)
+      @favicon.should_receive(:valid_favicon_url?).with('http://www.example.com/favicon.jpeg').and_return(true)
+      @favicon.find_from_html('<html></html>', 'http://www.example.com/').should == 'http://www.example.com/favicon.jpeg'
+    end
 
     it "should validate url" do
       @favicon.stub!(:request).and_return(expectaction(:body => '<html></html>', :request_url => 'http://www.example.com'))
@@ -56,7 +65,7 @@ describe WWW::Favicon do
 
     it "should return nil if #valid_favicon_url? returns false" do
       @favicon.should_receive(:request).and_return(expectaction(:body => '<html></html>', :request_url => 'http://www.example.com'))
-      @favicon.should_receive(:valid_favicon_url?).and_return(false)
+      @favicon.stub!(:valid_favicon_url?).and_return(false)
       @favicon.find('http://www.example.com/').should be_nil
     end
   end

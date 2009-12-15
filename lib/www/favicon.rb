@@ -13,11 +13,7 @@ module WWW
     end
 
     def find_from_html(html, url)
-      favicon_url = find_from_link(html, url) || default_path(url)
-
-      return nil unless valid_favicon_url?(favicon_url)
-
-      favicon_url
+      find_from_link(html, url) || default_path(url)
     end
 
     def valid_favicon_url?(url)
@@ -51,13 +47,15 @@ module WWW
     end
 
     def default_path(url)
-      uri = URI(url)
-      uri.path = '/favicon.ico'
-      %w[query fragment].each do |element|
-        uri.send element + '=', nil
+      %w(ico png gif jpg jpeg).each do |extension|
+        uri = URI(url)
+        uri.path = "/favicon.#{extension}"
+        %w[query fragment].each do |element|
+          uri.send element + '=', nil
+        end
+        return uri.to_s if valid_favicon_url?(uri.to_s)
       end
-
-      uri.to_s
+      nil
     end
 
     def request(url, options = {})
