@@ -8,8 +8,8 @@ module WWW
     VERSION = '0.0.6'
 
     def find(url)
-      response = request(url)
-      find_from_html(response.body, response.request_url)
+      response = open(url)
+      find_from_html(response.read, response.base_uri.to_s)
     end
 
     def find_from_html(html, url)
@@ -17,11 +17,14 @@ module WWW
     end
 
     def valid_favicon_url?(url)
-      response = request(url)
-
+      begin
+        response = open(url)
+      rescue OpenURI::HTTPError
+        return false
+      end
       (
-        response.code =~ /\A2/ &&
-        response.body.to_s != '' &&
+        response.status[0] =~ /\A2/ &&
+        response.read != '' &&
         response.content_type =~ /image/i
       ) ? true : false
     end
@@ -57,34 +60,6 @@ module WWW
       end
       nil
     end
-
-    def request(url, options = {})
-      method = options[:method] || :get
-      redirection_limit = options[:redirection_limit] || 10
-
-      uri = URI(url)
-      http = Net::HTTP.new(uri.host, uri.port)
-
-      if uri.scheme == 'https'
-        http.use_ssl = true
-        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      end
-
-      response = http.start do |http|
-        path =
-          (uri.path.empty? ? '/' : uri.path) +
-          (uri.query       ? '?' + uri.query : '') +
-          (uri.fragment    ? '#' + uri.fragment : '')
-        http.send(method, path)
-      end
-
-      if response.kind_of?(Net::HTTPRedirection) && redirection_limit > 0
-        request(response['Location'], :redirection_limit => redirection_limit - 1)
-      else
-        response.instance_variable_set('@request_url', url)
-        def response.request_url; @request_url; end
-        response
-      end
-    end
+  
   end
 end
