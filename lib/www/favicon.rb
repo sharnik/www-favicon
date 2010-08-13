@@ -24,8 +24,7 @@ module WWW
       end
       (
         response.status[0] =~ /\A2/ &&
-        response.read != '' &&
-        response.content_type =~ /image/i
+        response.read != ''
       ) ? true : false
     end
 
